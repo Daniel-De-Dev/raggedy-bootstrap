@@ -1,8 +1,8 @@
 {
-  description = "UEFI Bare Metal Bootstrap Environment";
+  description = "RISC-V UEFI Bare Metal Bootstrap Environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   };
 
   outputs = { nixpkgs, ... }: let
@@ -12,12 +12,26 @@
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
         qemu
-        OVMF
+        pkgsCross.riscv64.OVMF.fd
+
+        (writeShellScriptBin "boot-riscv" ''
+          cp -f ${pkgsCross.riscv64.OVMF.fd}/FV/RISCV_VIRT_VARS.fd ./_vars.fd
+          chmod +w ./_vars.fd
+
+          qemu-system-riscv64 \
+            -M virt \
+            -m 256M \
+            -drive if=pflash,format=raw,unit=0,file=${pkgsCross.riscv64.OVMF.fd}/FV/RISCV_VIRT_CODE.fd,readonly=on \
+            -drive if=pflash,format=raw,unit=1,file=./_vars.fd \
+            -drive file=fat:rw:bootdir,format=raw,if=virtio \
+            -device virtio-gpu-pci \
+            -device qemu-xhci \
+            -device usb-kbd
+        '')
       ];
 
       shellHook = ''
-        export OVMF_DIR="${pkgs.OVMF.fd}/FV"
-        echo "UEFI Bootstrap Toolchain loaded."
+        echo " RISC-V UEFI Bootstrap Toolchain loaded "
       '';
     };
   };
