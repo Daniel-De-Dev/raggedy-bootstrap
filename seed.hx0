@@ -1,0 +1,138 @@
+# ==============================================================================
+# Project: The Seed (hx0 Compiler)
+# Architecture: RISC-V 64-bit (RV64G)
+# Target: UEFI Bare Metal
+#
+# Description:
+# Implementation of the 'hx0' specification. Looks for 'src.hx0' from the FAT
+# root. Strips comments/whitespace, converts ASCII hex to binary, and writes
+# the output to 'out.efi'.
+# ==============================================================================
+
+# ==============================================================================
+# PE/COFF Headers
+# ==============================================================================
+
+# [0x00] DOS Header
+4D 5A                               # 'MZ' DOS Signature
+
+# [0x02] DOS Stub / Padding
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00
+
+# [0x3C] PE Header Offset
+40 00 00 00                         # Pointer to PE Signature (0x40)
+
+# [0x40] PE Signature
+50 45 00 00                         # 'PE\0\0' Signature
+
+# [0x44] COFF File Header
+64 50                               # Machine Type: RISC-V 64-bit (0x5064)
+01 00                               # Number of Sections: 1 (.text)
+00 00 00 00                         # TimeDateStamp: null
+00 00 00 00                         # PointerToSymbolTable: null
+00 00 00 00                         # NumberOfSymbols: null
+F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
+22 00                               # Characteristics: 0x0022
+                                    # -> EXECUTABLE_IMAGE (0x02) |
+                                    # LARGE_ADDRESS_AWARE (0x20)
+
+# ==============================================================================
+# "Optional" Header
+# ==============================================================================
+
+# [0x58] Standard fields
+0B 02                               # Magic: 0x20B (PE32+ identifier)
+00                                  # MajorLinkerVersion: null
+00                                  # MinorLinkerVersion: null
+00 10 00 00                         # SizeOfCode: 4096 bytes (0x1000)
+00 00 00 00                         # SizeOfInitializedData: null
+00 00 00 00                         # SizeOfUninitializedData: null
+00 10 00 00                         # AddressOfEntryPoint: 0x1000
+00 10 00 00                         # BaseOfCode: 0x1000
+
+# [0x70] "Windows-specific" fields
+00 00 40 00 00 00 00 00             # ImageBase: 0x400000
+00 10 00 00                         # SectionAlignment: 4096 bytes (0x1000)
+00 02 00 00                         # FileAlignment: 512 bytes (0x200)
+00 00                               # MajorOperatingSystemVersion: null
+00 00                               # MinorOperatingSystemVersion: null
+00 00                               # MajorImageVersion: null
+00 00                               # MinorImageVersion: null
+00 00                               # MajorSubsystemVersion: null
+00 00                               # MinorSubsystemVersion: null
+00 00 00 00                         # Win32VersionValue: null
+00 20 00 00                         # SizeOfImage: 8192 bytes (0x2000)
+                                    # -> Header Page + Section Page = 2 pages
+00 02 00 00                         # SizeOfHeaders: 512 bytes (0x200)
+00 00 00 00                         # CheckSum: null
+0A 00                               # Subsystem: 10
+                                    # -> (EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)
+00 00                               # DllCharacteristics: null
+00 00 00 00 00 00 00 00             # SizeOfStackReserve: null
+00 00 00 00 00 00 00 00             # SizeOfStackCommit: null
+00 00 00 00 00 00 00 00             # SizeOfHeapReserve: null
+00 00 00 00 00 00 00 00             # SizeOfHeapCommit: null
+00 00 00 00                         # LoaderFlags: null
+10 00 00 00                         # NumberOfRvaAndSizes: 16 (0x10)
+                                    # -> The 16 data-directory entries are left
+                                    # empty, but kept due to standard practice
+
+# [0xC8] Data Directories
+# (16 x 8 bytes each, as specified by NumberOfRvaAndSizes field)
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+
+
+# ==============================================================================
+# Section Table
+# ==============================================================================
+
+# [0x148] .text
+2E 74 65 78 74 00 00 00             # Name: ".text\0\0\0"
+00 10 00 00                         # VirtualSize: 4096 (0x1000)
+00 10 00 00                         # VirtualAddress: 0x1000 (Matches EntryPoint)
+00 02 00 00                         # SizeOfRawData: 512 (0x200)
+00 02 00 00                         # PointerToRawData: 0x0200 (Location in file)
+00 00 00 00                         # PointerToRelocations: null
+00 00 00 00                         # PointerToLinenumbers: null
+00 00                               # NumberOfRelocations: 0
+00 00                               # NumberOfLinenumbers: 0
+20 00 00 60                         # Characteristics: CODE | EXECUTE | READ (0x60000020)
+
+# [0x170] Padding
+# (Padded until file offset 0x200, as specified by PointerToRawData field)
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+
+# ==============================================================================
+# Code Payload (File Offset 0x0200 -> Virtual Offset 0x1000)
+# ==============================================================================
+# Entry: a0=ImageHandle, a1=SystemTable
+# ==============================================================================
+
+# TODO: Implement the actual hx0 algorithm
