@@ -32,6 +32,10 @@
 
       shellHook = ''
         echo " RISC-V UEFI Bootstrap Toolchain loaded "
+        mkdir -p bootdir/EFI/BOOT
+        if [ ! -f bootdir/EFI/BOOT/BOOTRISCV64.EFI ]; then
+          echo "Warning: No BOOTRISCV64.EFI found in bootdir"
+        fi
       '';
     };
   };
