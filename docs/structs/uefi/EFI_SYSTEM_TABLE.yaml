@@ -1,0 +1,33 @@
+name: EFI_SYSTEM_TABLE
+reference_link: "https://uefi.org/specs/UEFI/2.11/04_EFI_System_Table.html#efi-system-table-1"
+note:
+  "in RISC-V Passed as `a1` directly by the firmware at the entry point of the
+  bare-metal executable."
+uefi_version: 2.11
+fields:
+  - name: Hdr
+    type: EFI_TABLE_HEADER
+  - name: FirmwareVendor
+    type: CHAR16*
+  - name: FirmwareRevision
+    type: UINT32
+  - name: ConsoleInHandle
+    type: EFI_HANDLE
+  - name: ConIn
+    type: EFI_SIMPLE_TEXT_INPUT_PROTOCOL*
+  - name: ConsoleOutHandle
+    type: EFI_HANDLE
+  - name: ConOut
+    type: EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
+  - name: StandardErrorHandle
+    type: EFI_HANDLE
+  - name: StdErr
+    type: EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
+  - name: RuntimeServices
+    type: EFI_RUNTIME_SERVICES*
+  - name: BootServices
+    type: EFI_BOOT_SERVICES*
+  - name: NumberOfTableEntries
+    type: UINTN
+  - name: ConfigurationTable
+    type: EFI_CONFIGURATION_TABLE*

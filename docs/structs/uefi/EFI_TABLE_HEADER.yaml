@@ -1,0 +1,14 @@
+name: EFI_TABLE_HEADER
+reference_link: "https://uefi.org/specs/UEFI/2.11/04_EFI_System_Table.html#efi-table-header"
+uefi_version: 2.11
+fields:
+  - name: Signature
+    type: UINT64
+  - name: Revision
+    type: UINT32
+  - name: HeaderSize
+    type: UINT32
+  - name: CRC32
+    type: UINT32
+  - name: Reserved
+    type: UINT32

@@ -1,0 +1,5 @@
+name: EFI_HANDLE
+reference_link: "https://uefi.org/specs/UEFI/2.11/02_Overview.html#common-uefi-data-types"
+note: "Its actually just a `VOID*` type"
+uefi_version: 2.11
+size: NATIVE_WORD_SIZE

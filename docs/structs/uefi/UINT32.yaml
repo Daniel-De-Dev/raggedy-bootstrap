@@ -1,0 +1,4 @@
+name: UINT32
+reference_link: "https://uefi.org/specs/UEFI/2.11/02_Overview.html#common-uefi-data-types"
+uefi_version: 2.11
+size: 4
