@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 import os
 import sys
+import argparse
 from typing import Any
 import yaml
 import glob
 
-# TODO: Define github action to assert nix fmt and also some way to check
-# if docs are up-to-date at each commit
-
+# Configuration
 STRUCTS_DIR = "docs/structs/uefi"
 OUT_DIR = "docs/uefi"
-
-# Configuration
 TARGET_ARCH_BITS = 64
 NATIVE_WORD_SIZE = TARGET_ARCH_BITS // 8
 
@@ -32,17 +29,13 @@ def log_info(msg: str) -> None:
 def get_type_info(type_name: str, structs: dict[str, Any]) -> tuple[int, int]:
     """
     Returns (size, alignment) in bytes for a given type.
-    Resolves everything dynamically from the loaded YAML files.
     """
     type_name = type_name.strip()
 
     # Pointers
-    # A pointer's size depends on the architecture. In UEFI, it's same as UINTN.
     if type_name.endswith("*"):
         if "UINTN" not in structs:
-            log_error(
-                f"pointer type '{type_name}' used, but 'UINTN' is not defined. Please create UINTN.yaml."
-            )
+            log_error(f"pointer type '{type_name}' used, but 'UINTN' is not defined.")
             return (0, 1)
         return get_type_info("UINTN", structs)
 
@@ -60,7 +53,6 @@ def get_type_info(type_name: str, structs: dict[str, Any]) -> tuple[int, int]:
         # Primitive Definition
         if "fields" not in struct_def and "size" in struct_def:
             size = struct_def["size"]
-            # Default alignment to size if not explicitly provided
             align = struct_def.get("alignment", size)
             return (size, align)
 
@@ -88,116 +80,104 @@ def get_type_info(type_name: str, structs: dict[str, Any]) -> tuple[int, int]:
         tail_pad = (max_align - (current_offset % max_align)) % max_align
         return (current_offset + tail_pad, max_align)
 
-    # Fallback for unknown types
-    log_warning(f"unknown type '{type_name}'. Defaulting to size 0.")
     return (0, 1)
 
 
 def main():
+    parser = argparse.ArgumentParser(description="UEFI Documentation Generator")
+    parser.add_argument(
+        "--check", action="store_true", help="Verify docs are up-to-date"
+    )
+    args = parser.parse_args()
+
     os.makedirs(OUT_DIR, exist_ok=True)
     yaml_files = glob.glob(os.path.join(STRUCTS_DIR, "*.yaml"))
 
-    # Load all structs and primitives
     structs: dict[str, Any] = {}
     for filepath in yaml_files:
         with open(filepath, "r") as file:
             data = yaml.safe_load(file)
-
-            # Substitute architecture-dependent constants on load
             if "size" in data and data["size"] == "NATIVE_WORD_SIZE":
                 data["size"] = NATIVE_WORD_SIZE
             if "name" in data:
                 structs[data["name"]] = data
 
     known_types = set(structs.keys())
-    generated_count = 0
+    failure = False
 
-    # Generate the Markdown files
     for name, data in structs.items():
         ref_link = data.get("reference_link")
         if not ref_link:
-            log_error(
-                f"'{name}' is missing the required 'reference_link' field. Skipping..."
-            )
+            log_error(f"'{name}' is missing the required 'reference_link' field.")
+            failure = True
             continue
 
+        md: list[str] = []
+        md.append("---\n")
+        md.append(f"uefi_version: {data.get('uefi_version', '2.11')}\n")
+        md.append(f"architecture: {TARGET_ARCH_BITS}\n")
+        md.append("---\n\n")
+        md.append(
+            "<!-- THIS FILE IS AUTO-GENERATED FROM YAML DATA. DO NOT EDIT DIRECTLY! -->\n\n"
+        )
+        md.append(f"# [{name}]({ref_link})\n\n")
+
+        if "note" in data:
+            md.append(f"**Note:** {data['note']}\n\n")
+
+        if "fields" not in data and "size" in data:
+            size, align = get_type_info(name, structs)
+            md.append(f"**Primitive Type**\n\n")
+            md.append(f"- **Size**: `{size}` bytes\n")
+            md.append(f"- **Alignment**: `{align}` bytes\n")
+        else:
+            md.append(
+                "| Offset (Dec) | Offset (Hex) | Type | Name | Size | Padding |\n"
+            )
+            md.append("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
+            off = 0
+            for field in data.get("fields", []):
+                fname, ftype = field.get("name", "Unknown"), field.get(
+                    "type", "Unknown"
+                )
+                sz, al = get_type_info(ftype, structs)
+                pad = (al - (off % al)) % al
+                fsz, fpad = field.get("size", sz), field.get("padding", pad)
+                base = ftype.split("[")[0].replace("*", "").strip()
+                dtype = (
+                    f"[`{base}`]({base}.md){ftype[len(base):]}"
+                    if base in known_types
+                    else f"`{ftype}`"
+                )
+
+                if base not in known_types and base != "VOID":
+                    log_warning(f"type '{base}' referenced in '{name}' is not defined.")
+
+                md.append(
+                    f"| {off} | `0x{off:02X}` | {dtype} | `{fname}` | {fsz} | {fpad} |\n"
+                )
+                off += fsz + fpad
+
+        full_md = "".join(md)
         md_path = os.path.join(OUT_DIR, f"{name}.md")
 
-        with open(md_path, "w") as f:
-            # Metadata
-            f.write("---\n")
-            f.write(f"uefi_version: {data.get('uefi_version', '2.11')}\n")
-            f.write(f"architecture: {TARGET_ARCH_BITS}\n")
-            f.write("---\n\n")
-
-            f.write(
-                "<!-- THIS FILE IS AUTO-GENERATED FROM YAML DATA. DO NOT EDIT DIRECTLY! -->\n\n"
-            )
-
-            # Header
-            f.write(f"# [{name}]({ref_link})\n\n")
-
-            # Note/Comment
-            if "note" in data:
-                f.write(f"**Note:** {data['note']}\n\n")
-
-            # Check if this is a Primitive or a Compound Struct
-            if "fields" not in data and "size" in data:
-                # Primitive
-                size = data["size"]
-                align = data.get("alignment", size)
-                f.write(f"**Primitive Type**\n\n")
-                f.write(f"- **Size**: `{size}` bytes\n")
-                f.write(f"- **Alignment**: `{align}` bytes\n")
+        if args.check:
+            if not os.path.exists(md_path):
+                log_error(f"missing doc: {md_path}")
+                failure = True
             else:
-                # Struct
-                f.write(
-                    "| Offset (Dec) | Offset (Hex) | Type | Name | Size | Padding |\n"
-                )
-                f.write("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
+                with open(md_path, "r") as f:
+                    if f.read() != full_md:
+                        log_error(f"stale doc: {md_path}")
+                        failure = True
+        else:
+            with open(md_path, "w") as f:
+                f.write(full_md)
 
-                current_offset = 0
-
-                # Calculate and write rows
-                for field in data.get("fields", []):
-                    fname = field.get("name", "Unknown")
-                    ftype = field.get("type", "Unknown")
-
-                    # Auto-calculate size and required padding based on ABI alignment
-                    calc_size, calc_align = get_type_info(ftype, structs)
-                    calc_pad = (calc_align - (current_offset % calc_align)) % calc_align
-
-                    # Allow YAML overrides
-                    fsize = field.get("size", calc_size)
-                    fpad = field.get("padding", calc_pad)
-
-                    # Auto-link types
-                    base_type = ftype.split("[")[0].replace("*", "").strip()
-                    if base_type in known_types:
-                        display_type = f"[`{base_type}`]({base_type}.md)"
-                        display_type = ftype.replace(
-                            base_type, display_type
-                        )  # restore * or []
-                    else:
-                        display_type = f"`{ftype}`"
-                        log_warning(
-                            f"type '{base_type}' referenced in '{name}' is not defined. Consider creating docs/structs/uefi/{base_type}.yaml"
-                        )
-
-                    dec_off = current_offset
-                    hex_off = f"`0x{current_offset:02X}`"
-
-                    f.write(
-                        f"| {dec_off} | {hex_off} | {display_type} | `{fname}` | {fsize} | {fpad} |\n"
-                    )
-
-                    current_offset += fsize + fpad
-
-        generated_count += 1
-
-    log_info(
-        f"successfully generated {generated_count} documentation files (Targeting {TARGET_ARCH_BITS}-bit architecture) in '{OUT_DIR}/'"
-    )
+    if failure:
+        sys.exit(1)
+    elif args.check:
+        log_info("all documentation is synchronized.")
 
 
 if __name__ == "__main__":

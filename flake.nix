@@ -32,21 +32,36 @@
           };
         };
       };
+
+      pythonEnv = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
     in {
       formatter.${system} = treefmtEval.config.build.wrapper;
 
-      checks.${system}.formatting = treefmtEval.config.build.check self;
+      checks.${system} = {
+        formatting = treefmtEval.config.build.check self;
+        docs-sync = pkgs.stdenv.mkDerivation {
+          name = "docs-sync-check";
+          src = self;
+          buildInputs = [ pythonEnv ];
+          buildPhase = ''
+            python3 scripts/gen_docs.py --check
+          '';
+          installPhase = "touch $out";
+        };
+      };
 
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           qemu
           pkgsCross.riscv64.OVMF.fd
-          python3
-          python3Packages.pyyaml
-
+          pythonEnv
           (writeShellScriptBin "boot-riscv" ''
-            cp -f ${pkgsCross.riscv64.OVMF.fd}/FV/RISCV_VIRT_VARS.fd ./_vars.fd
-            chmod +w ./_vars.fd
+            if [ ! -f ./_vars.fd ]; then
+              cp -f ${pkgsCross.riscv64.OVMF.fd}/FV/RISCV_VIRT_VARS.fd ./_vars.fd
+              chmod +w ./_vars.fd
+            fi
+
+            mkdir -p bootdir/EFI/BOOT
 
             qemu-system-riscv64 \
               -M virt \
@@ -62,9 +77,10 @@
 
         shellHook = ''
           echo " RISC-V UEFI Bootstrap Toolchain loaded "
+          echo " Run 'boot-riscv' to start the emulator "
           mkdir -p bootdir/EFI/BOOT
           if [ ! -f bootdir/EFI/BOOT/BOOTRISCV64.EFI ]; then
-            echo "Warning: No BOOTRISCV64.EFI found in bootdir"
+            echo "Warning: No BOOTRISCV64.EFI found in bootdir/EFI/BOOT"
           fi
         '';
       };
