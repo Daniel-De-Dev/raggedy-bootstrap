@@ -9,7 +9,13 @@
     };
   };
 
-  outputs = { self, nixpkgs, treefmt-nix, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      treefmt-nix,
+      ...
+    }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -17,14 +23,25 @@
       treefmtEval = treefmt-nix.lib.evalModule pkgs {
         projectRootFile = "flake.nix";
 
-        settings.global.excludes = [ "docs/uefi/*.md" ];
+        settings.global.excludes = [
+          ".envrc"
+          "*.hx0"
+          "docs/uefi/*.md"
+        ];
 
         programs = {
-          nixfmt.enable = true;
+          nixfmt = {
+            enable = true;
+            package = pkgs.nixfmt-rfc-style;
+          };
           black.enable = true;
           prettier = {
             enable = true;
-            includes = [ "*.md" "*.yaml" "*.yml" ];
+            includes = [
+              "*.md"
+              "*.yaml"
+              "*.yml"
+            ];
             settings = {
               printWidth = 80;
               proseWrap = "always";
@@ -34,7 +51,8 @@
       };
 
       pythonEnv = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
-    in {
+    in
+    {
       formatter.${system} = treefmtEval.config.build.wrapper;
 
       checks.${system} = {
