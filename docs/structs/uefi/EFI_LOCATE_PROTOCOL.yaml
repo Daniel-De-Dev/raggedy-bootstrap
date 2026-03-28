@@ -1,0 +1,4 @@
+name: EFI_LOCATE_PROTOCOL
+reference_link: "https://uefi.org/specs/UEFI/2.11/07_Services_Boot_Services.html#efi-boot-services-locateprotocol"
+uefi_version: 2.11
+size: NATIVE_WORD_SIZE

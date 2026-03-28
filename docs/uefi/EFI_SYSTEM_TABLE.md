@@ -21,6 +21,6 @@ architecture: 64
 | 72 | `0x48` | [`EFI_HANDLE`](EFI_HANDLE.md) | `StandardErrorHandle` | 8 | 0 |
 | 80 | `0x50` | `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*` | `StdErr` | 8 | 0 |
 | 88 | `0x58` | `EFI_RUNTIME_SERVICES*` | `RuntimeServices` | 8 | 0 |
-| 96 | `0x60` | `EFI_BOOT_SERVICES*` | `BootServices` | 8 | 0 |
+| 96 | `0x60` | [`EFI_BOOT_SERVICES`](EFI_BOOT_SERVICES.md)* | `BootServices` | 8 | 0 |
 | 104 | `0x68` | [`UINTN`](UINTN.md) | `NumberOfTableEntries` | 8 | 0 |
 | 112 | `0x70` | `EFI_CONFIGURATION_TABLE*` | `ConfigurationTable` | 8 | 0 |

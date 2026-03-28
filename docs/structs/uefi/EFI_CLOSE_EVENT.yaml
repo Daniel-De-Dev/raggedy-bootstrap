@@ -1,0 +1,4 @@
+name: EFI_CLOSE_EVENT
+reference_link: "https://uefi.org/specs/UEFI/2.11/07_Services_Boot_Services.html#efi-boot-services-closeevent"
+uefi_version: 2.11
+size: NATIVE_WORD_SIZE
