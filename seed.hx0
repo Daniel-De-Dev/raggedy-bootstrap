@@ -146,6 +146,7 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 # --- Save Callee-Saved Registers ---
 23 3? ?? ?? # sd s0, _OFF_S0_(sp)         # Save s0
 23 3? ?? ?? # sd s1, _OFF_S1_(sp)         # Save s1
+23 3? ?? ?? # sd s2, _OFF_S2_(sp)         # Save s2
 # TODO: add remaining 's' registers once final register usage is known
 
 # --- Context ---
@@ -159,6 +160,7 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 # ------------------------------------------------------------------------------
 # s0 = *EFI_BOOT_SERVICES
 # s1 = *input_file_buffer (64KB)
+# s2 = *output_file_buffer (64KB)
 # ------------------------------------------------------------------------------
 
 03 B4 05 06 # ld s0, 96(a1)               # s0: SystemTable->BootServices
@@ -181,7 +183,28 @@ B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
 83 34 01 00 # ld s1, 0(sp)                # s1: Load *Buffer from stack
 
-# TODO: 2.2 Allocate Memory for out.efi
+
+# ------------------------------------------------------------------------------
+# [2.2] Allocate Memory for out.efi
+# ------------------------------------------------------------------------------
+# Call:   EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
+# Param:  a0 = PoolType (2 = EfiLoaderData)
+# Param:  a1 = Size (0x10000 = 64KB)
+# Param:  a2 = **Buffer (Current stack pointer `sp`)
+# Note:   Return status (a0) is ignored for simplicity
+# ------------------------------------------------------------------------------
+
+13 05 20 00 # addi a0, x0, 2              # a0: PoolType = 2
+B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000
+13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
+83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
+E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
+03 39 01 00 # ld s2, 0(sp)                # s2: Load *Buffer from stack
+
+
+# TODO: 2.3 Locate Simpele File System Protocol
 
 
 # TODO: End of program clean up before return
+# - Free allocaed memory
+# - Restore callee registers
