@@ -5,8 +5,7 @@
 #
 # Description:
 # Implementation of the 'hx0' specification. Looks for 'src.hx0' from the FAT
-# root. Strips comments/whitespace, converts ASCII hex to binary, and writes
-# the output to 'out.efi'.
+# root and writes the output to 'out.efi'.
 # ==============================================================================
 
 # ==============================================================================
@@ -182,7 +181,7 @@ B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000
 13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
 83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
-83 34 01 00 # ld s1, 0(sp)                # s1: Load *Buffer from stack
+83 34 01 00 # ld s1, 0(sp)                # s1: *Buffer from stack
 
 
 # [2.1.2] Allocate Memory for out.efi
@@ -197,12 +196,38 @@ B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000
 13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
 83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
-03 39 01 00 # ld s2, 0(sp)                # s2: Load *Buffer from stack
+03 39 01 00 # ld s2, 0(sp)                # s2: *Buffer from stack
 
 
-# TODO: 2.2 Locate Simpele File System Protocol
+# ------------------------------------------------------------------------------
+# [2.2] Read Input File into Buffer
+# ------------------------------------------------------------------------------
+
+# [2.2.1] Locate Simple File System Protocol
+# Call:   EFI_BOOT_SERVICES->LocateProtocol(*Protocol, *Registration, **Interface)
+# Param:  a0 = *Protocol (Pointer to EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID)
+# Param:  a1 = *Registration (NULL)
+# Param:  a2 = **Interface (Current stack pointer `sp`)
+# Note:   PC-Relative addressing (auipc) to dynamically find the GUID.
+#         Return status (a0) is ignored for simplicity
+
+6F 00 40 01 # jal x0, 20                  # Jump over the GUID data
+
+# EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID
+22 5B 4E 96
+59 64
+D2 11
+8E 39 00 A0 C9 69 72 3B
+
+17 05 00 00 # auipc a0, 0                 # a0: Current Program Counter (PC)
+13 05 05 FF # addi a0, a0, -16            # a0 = PC - 16
+93 05 00 00 # addi a1, x0, 0              # a1: NULL
+13 06 01 00 # addi a2, sp, 0              # a2: **Interface = sp
+83 32 04 14 # ld t0, 320(s0)              # t0: *LocateProtocol
+E7 80 02 00 # jalr ra, 0(t0)              # Call LocateProtocol
+83 39 01 00 # ld s3, 0(sp)                # s3: *Interface from stack
 
 
 # TODO: End of program clean up before return
-# - Free allocaed memory
+# - Free allocated memory
 # - Restore callee registers
