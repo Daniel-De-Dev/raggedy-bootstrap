@@ -7,7 +7,17 @@ architecture: 64
 
 # [EFI_LOCATE_PROTOCOL](https://uefi.org/specs/UEFI/2.11/07_Services_Boot_Services.html#efi-boot-services-locateprotocol)
 
-**Primitive Type**
+**Note:** The returned `Interface` depends on the `Protocol` GUID provided.
+
+**Function Pointer**
 
 - **Size**: `8` bytes
-- **Alignment**: `8` bytes
+- **Returns**: `EFI_STATUS`
+
+### Parameters
+
+| Type | Name |
+| :--- | :--- |
+| [`EFI_GUID*`](EFI_GUID.md) | `Protocol` |
+| `VOID*` | `Registration` |
+| `VOID**` | `Interface` |
