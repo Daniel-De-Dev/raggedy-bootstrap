@@ -3,37 +3,12 @@
 A bare-metal, self-hosting compiler chain from scratch. Targets RISC-V 64-bit
 (RV64G) under the UEFI environment.
 
-This project attempts to start from a tiny, hand-assembled binary "Seed" and
-iteratively compiling higher-level languages until (hopefully) a full toolchain
-is realized.
+## Documentation
 
-## The Plan
-
-The goal is to reach a self-hosting system through a series of "stages" or
-"bootstrap levels":
-
-1.  **Stage 0 (The Seed):** A minimal hex-to-binary compiler written in raw
-    machine code (hex strings). It supports comments and ignores whitespace.
-2.  **Stage 1 (Hex+):** Use the Seed to build a slightly better assembler that
-    supports labels and basic symbol resolution.
-3.  **Stage 2 (Intermediate):** Build a small, specialized systems language
-    (likely a Forth or a simplified C-subset).
-4.  **Stage 3 (Full Circle):** Implement the final high-level language and
-    compiler that can compile itself.
-
-## Current Status
-
-- [x] **Nix Toolchain:** Reproducible environment with QEMU and UEFI firmware.
-- [x] **Doc Generator:** Automated tool for UEFI struct ABI calculations.
-- [ ] **Seed Logic:** Hex-to-binary logic implemented in `seed.hx0`.
-- [ ] **Stage 1 Transition:** Currently writing the first "proper" assembler
-      logic in hex.
+I've tried to keep good Documentation for the project. Please see
+[`docs/README.md`](/docs/README.md)
 
 ## Getting Started
-
-If you are new to the project or want to understand the very first steps of the
-bootstrap, **read [docs/seed.md](docs/seed.md) first.** It explains the `hx0`
-specification and how the initial binary is constructed.
 
 To enter the development environment:
 
@@ -96,6 +71,7 @@ The `flake check` command verifies that:
 ## Project Structure
 
 - `docs/structs/uefi/`: Source YAML definitions for UEFI types.
-- `docs/uefi/`: Auto-generated Markdown documentation.
+- `docs/uefi/`: Generated Markdown documentation.
 - `scripts/`: Internal toolchain scripts.
 - `bootdir/`: The virtual disk content for the emulator.
+- `seed.hx0`: The source of the stage-0 hex compiler.
