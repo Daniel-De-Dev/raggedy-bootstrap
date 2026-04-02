@@ -1,0 +1,10 @@
+name: EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME
+reference_link: "https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html#efi-simple-file-system-protocol-openvolume"
+uefi_version: 2.11
+kind: function
+return_type: EFI_STATUS
+parameters:
+  - name: This
+    type: EFI_SIMPLE_FILE_SYSTEM_PROTOCOL*
+  - name: Root
+    type: EFI_FILE_PROTOCOL**

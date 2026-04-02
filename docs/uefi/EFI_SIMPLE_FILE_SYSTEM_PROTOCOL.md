@@ -10,4 +10,4 @@ architecture: 64
 | Offset (Dec) | Offset (Hex) | Type | Name | Size | Padding |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 0 | `0x00` | [`UINT64`](UINT64.md) | `Revision` | 8 | 0 |
-| 8 | `0x08` | `EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME` | `OpenVolume` | 0 | 0 |
+| 8 | `0x08` | [`EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME`](EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME.md) | `OpenVolume` | 8 | 0 |

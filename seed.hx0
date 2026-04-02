@@ -143,10 +143,14 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 13 01 ?? ?? # addi sp, sp, -_FRAME_SZ_    # Allocate _FRAME_SZ_ bytes on stack
 
 # Save Callee-Saved Registers
-23 3? ?? ?? # sd s0, _OFF_S0_(sp)         # Save s0
-23 3? ?? ?? # sd s1, _OFF_S1_(sp)         # Save s1
-23 3? ?? ?? # sd s2, _OFF_S2_(sp)         # Save s2
-# TODO: add remaining 's' registers once final register usage is known
+#23 3? ?? ?? # sd s0, _OFF_S0_(sp)         # Save s0
+#23 3? ?? ?? # sd s1, _OFF_S1_(sp)         # Save s1
+#23 3? ?? ?? # sd s2, _OFF_S2_(sp)         # Save s2
+#23 3? ?? ?? # sd s3, _OFF_S3_(sp)         # Save s3
+#23 3? ?? ?? # sd s4, _OFF_S4_(sp)         # Save s4
+
+# TODO: add remaining 's' registers once final register usage is known.
+# Then correct the stack frame intilization
 
 # Context
 23 3? ?? ?? # sd a0, _OFF_A0_(sp)         # Save ImageHandle
@@ -220,12 +224,25 @@ D2 11
 8E 39 00 A0 C9 69 72 3B
 
 17 05 00 00 # auipc a0, 0                 # a0: Current Program Counter (PC)
-13 05 05 FF # addi a0, a0, -16            # a0 = PC - 16
-93 05 00 00 # addi a1, x0, 0              # a1: NULL
+13 05 05 FF # addi a0, a0, -16            # a0: *Protocol = PC - 16
+93 05 00 00 # addi a1, x0, 0              # a1: *Registration = NULL
 13 06 01 00 # addi a2, sp, 0              # a2: **Interface = sp
 83 32 04 14 # ld t0, 320(s0)              # t0: *LocateProtocol
 E7 80 02 00 # jalr ra, 0(t0)              # Call LocateProtocol
 83 39 01 00 # ld s3, 0(sp)                # s3: *Interface from stack
+
+
+# [2.2.2] Open Root Volume
+# Call:   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL->OpenVolume(*This, **Root)
+# Param:  a0 = *This (s3 contains pointer to simple fs interface)
+# Param:  a1 = **Root (Current stack pointer `sp`)
+# Note:   Return status (a0) is ignored for simplicity
+
+13 85 09 00 # addi a0, s3, 0              # a0: *This = s3
+93 05 01 00 # addi a1, sp, 0              # a1: **Root = sp
+83 B2 89 00 # ld t0, 8(s3)                # t0: *OpenVolume
+E7 80 02 00 # jalr ra, 0(t0)              # Call OpenVolume
+03 3A 01 00 # ld s4, 0(sp)                # s4: *Root from stack
 
 
 # TODO: End of program clean up before return
