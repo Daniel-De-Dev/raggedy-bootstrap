@@ -140,7 +140,7 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 # Respect UEFI ABI with regards to callee saved registers
 # ------------------------------------------------------------------------------
 
-13 01 ?? ?? # addi sp, sp, -_FRAME_SZ_    # Allocate _FRAME_SZ_ bytes on stack
+# 13 01 ?? ?? # addi sp, sp, -_FRAME_SZ_    # Allocate _FRAME_SZ_ bytes on stack
 
 # Save Callee-Saved Registers
 #23 3? ?? ?? # sd s0, _OFF_S0_(sp)         # Save s0
@@ -152,18 +152,20 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 # TODO: add remaining 's' registers once final register usage is known.
 # Then correct the stack frame intilization
 
-# Context
-23 3? ?? ?? # sd a0, _OFF_A0_(sp)         # Save ImageHandle
-23 3? ?? ?? # sd a1, _OFF_A1_(sp)         # Save SystemTable
-23 3? ?? ?? # sd ra, _OFF_RA_(sp)         # Save Return Address
+# Context NOTE: Might not need to store registers other than ra
+# 23 3? ?? ?? # sd a0, _OFF_A0_(sp)         # Save ImageHandle
+# 23 3? ?? ?? # sd a1, _OFF_A1_(sp)         # Save SystemTable
+# 23 3? ?? ?? # sd ra, _OFF_RA_(sp)         # Save Return Address
 
 
 # ------------------------------------------------------------------------------
 # [2.0] State Initialization
 # ------------------------------------------------------------------------------
+# State after this section:
 # s0 = *EFI_BOOT_SERVICES
 # s1 = *input_file_buffer (64KB)
 # s2 = *output_file_buffer (64KB)
+# s3 = *EFI_FILE_PROTOCOL (Root Directory Handle)
 # ------------------------------------------------------------------------------
 
 03 B4 05 06 # ld s0, 96(a1)               # s0: SystemTable->BootServices
@@ -174,14 +176,11 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 # ------------------------------------------------------------------------------
 
 # [2.1.1] Allocate Memory for src.hx0
-# Call:   EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
-# Param:  a0 = PoolType (2 = EfiLoaderData)
-# Param:  a1 = Size (0x10000 = 64KB)
-# Param:  a2 = **Buffer (Current stack pointer `sp`)
-# Note:   Return status (a0) is ignored for simplicity
+# Call: EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
+# Note: Return status ignored. EfiLoaderData = 2.
 
 13 05 20 00 # addi a0, x0, 2              # a0: PoolType = 2
-B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000
+B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000 (64KB)
 13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
 83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
@@ -189,14 +188,11 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
 
 
 # [2.1.2] Allocate Memory for out.efi
-# Call:   EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
-# Param:  a0 = PoolType (2 = EfiLoaderData)
-# Param:  a1 = Size (0x10000 = 64KB)
-# Param:  a2 = **Buffer (Current stack pointer `sp`)
-# Note:   Return status (a0) is ignored for simplicity
+# Call: EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
+# Note: Return status ignored. EfiLoaderData = 2.
 
 13 05 20 00 # addi a0, x0, 2              # a0: PoolType = 2
-B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000
+B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000 (64KB)
 13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
 83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
@@ -208,12 +204,8 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
 # ------------------------------------------------------------------------------
 
 # [2.2.1] Locate Simple File System Protocol
-# Call:   EFI_BOOT_SERVICES->LocateProtocol(*Protocol, *Registration, **Interface)
-# Param:  a0 = *Protocol (Pointer to EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID)
-# Param:  a1 = *Registration (NULL)
-# Param:  a2 = **Interface (Current stack pointer `sp`)
-# Note:   PC-Relative addressing (auipc) to dynamically find the GUID.
-#         Return status (a0) is ignored for simplicity
+# Call: EFI_BOOT_SERVICES->LocateProtocol(*Protocol, *Registration, **Interface)
+# Note: Return status ignored.
 
 6F 00 40 01 # jal x0, 20                  # Jump over the GUID data
 
@@ -233,17 +225,14 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call LocateProtocol
 
 
 # [2.2.2] Open Root Volume
-# Call:   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL->OpenVolume(*This, **Root)
-# Param:  a0 = *This (s3 contains pointer to simple fs interface)
-# Param:  a1 = **Root (Current stack pointer `sp`)
-# Note:   Return status (a0) is ignored for simplicity
+# Call: EFI_SIMPLE_FILE_SYSTEM_PROTOCOL->OpenVolume(*This, **Root)
+# Note: Return status ignored.
 
 13 85 09 00 # addi a0, s3, 0              # a0: *This = s3
 93 05 01 00 # addi a1, sp, 0              # a1: **Root = sp
 83 B2 89 00 # ld t0, 8(s3)                # t0: *OpenVolume
 E7 80 02 00 # jalr ra, 0(t0)              # Call OpenVolume
-03 3A 01 00 # ld s4, 0(sp)                # s4: *Root from stack
-
+83 39 01 00 # ld s3, 0(sp)                # s3: *Root from stack
 
 # TODO: End of program clean up before return
 # - Free allocated memory
