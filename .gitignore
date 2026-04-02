@@ -1,4 +1,4 @@
-.direnv
-NvVars
 _vars.fd
-bootdir
+bootdir/
+.ovmf_timeout.bin
+.direnv
