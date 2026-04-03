@@ -7,7 +7,13 @@ architecture: 64
 
 # [EFI_FILE_CLOSE](https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html#efi-file-protocol-close)
 
-**Primitive Type**
+**Function Pointer**
 
 - **Size**: `8` bytes
-- **Alignment**: `8` bytes
+- **Returns**: `EFI_STATUS`
+
+### Parameters
+
+| Type | Name |
+| :--- | :--- |
+| [`EFI_FILE_PROTOCOL*`](EFI_FILE_PROTOCOL.md) | `This` |

@@ -6,6 +6,8 @@
 # Description:
 # Implementation of the 'hx0' specification. Looks for 'src.hx0' from the FAT
 # root and writes the output to 'out.efi'.
+#
+# Note: Return status from functions are never checked in this implementation
 # ==============================================================================
 
 # ==============================================================================
@@ -177,7 +179,7 @@ F0 00                               # SizeOfOptionalHeader: 240 bytes (0x00F0)
 
 # [2.1.1] Allocate Memory for src.hx0
 # Call: EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
-# Note: Return status ignored. EfiLoaderData = 2.
+# Note: EfiLoaderData = 2.
 
 13 05 20 00 # addi a0, x0, 2              # a0: PoolType = 2
 B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000 (64KB)
@@ -189,7 +191,7 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
 
 # [2.1.2] Allocate Memory for out.efi
 # Call: EFI_BOOT_SERVICES->AllocatePool(PoolType, Size, **Buffer)
-# Note: Return status ignored. EfiLoaderData = 2.
+# Note: EfiLoaderData = 2.
 
 13 05 20 00 # addi a0, x0, 2              # a0: PoolType = 2
 B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000 (64KB)
@@ -205,7 +207,6 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
 
 # [2.2.1] Locate Simple File System Protocol
 # Call: EFI_BOOT_SERVICES->LocateProtocol(*Protocol, *Registration, **Interface)
-# Note: Return status ignored.
 
 6F 00 40 01 # jal x0, 20                  # Jump over the GUID data
 
@@ -226,7 +227,7 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call LocateProtocol
 
 # [2.2.2] Open Root Volume
 # Call: EFI_SIMPLE_FILE_SYSTEM_PROTOCOL->OpenVolume(*This, **Root)
-# Note: Return status ignored. Reuses S3 register
+# Note: Reuses S3 register
 
 13 85 09 00 # addi a0, s3, 0              # a0: *This = s3
 93 05 01 00 # addi a1, sp, 0              # a1: **Root = sp
@@ -237,7 +238,7 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call OpenVolume
 
 # [2.2.3] Open `src.hx0`
 # Call: EFI_FILE_PROTOCOL->Open(*This, **NewHandle, *FileName, OpenMode, Attributes)
-# Note: String is inline UCS-2. Return status ignored
+# Note: String is inline UCS-2.
 
 6F 00 40 01 # jal x0, 20                  # Jump over the filename string
 
@@ -258,7 +259,6 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call Open
 
 # [2.2.4] Read File Content
 # Call: EFI_FILE_PROTOCOL->Read(*This, *BufferSize, *Buffer)
-# Note: Return status ignored
 
 13 05 0A 00 # addi a0, s4, 0              # a0: *This = s4 (src_file_handle)
 B7 05 01 00 # lui a1, 0x10                # a1: 0x10000 (64KB)
@@ -268,7 +268,14 @@ B7 05 01 00 # lui a1, 0x10                # a1: 0x10000 (64KB)
 83 32 0A 02 # ld t0, 32(s4)               # t0: *Read
 E7 80 02 00 # jalr ra, 0(t0)              # Call Read
 
-# TODO: 2.2.5 close src.hx0 handle
+
+# [2.2.5] Close File
+# Call: EFI_FILE_PROTOCOL->Close(*This)
+# Note: S4 is free to be reused.
+
+13 05 0A 00 # addi a0, s4, 0              # a0: *This = s4
+83 32 0A 01 # ld t0, 16(s4)               # t0: *Close
+E7 80 02 00 # jalr ra, 0(t0)              # Call Close
 
 # TODO: End of program clean up before return
 # - Close no longer needed handles (?)

@@ -1,4 +1,8 @@
 name: EFI_FILE_CLOSE
 reference_link: "https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html#efi-file-protocol-close"
 uefi_version: 2.11
-size: NATIVE_WORD_SIZE
+kind: function
+return_type: EFI_STATUS
+parameters:
+  - name: This
+    type: EFI_FILE_PROTOCOL*
