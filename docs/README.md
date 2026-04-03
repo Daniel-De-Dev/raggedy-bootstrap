@@ -4,14 +4,13 @@ Welcome. This directory contains the documentation related to the project.
 
 ## 1. The Seed Compiler
 
-The absolute beginning of the bootstrap chain is `seed.hx0`, a minimalist
-compiler written directly in raw machine code hex.
+The beginning of the bootstrap chain is `seed.hx0`, a basic "compiler" that
+implements its own spec
 
-- [**The Seed Overview**](seed.md): Explains the runtime environment, the
-  compilation process, and how self-hosting verification works.
+Read further:
 
-- [**hx0 Specification**](specs/hx0.md): The specification for the stage-0
-  language.
+- [**The Seed Overview**](seed.md)
+- [**hx0 Specification**](specs/hx0.md)
 
 ## 2. UEFI ABI Reference
 
