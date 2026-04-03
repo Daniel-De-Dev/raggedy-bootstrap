@@ -1,0 +1,16 @@
+name: EFI_FILE_OPEN
+reference_link: "https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html#efi-file-protocol-open"
+uefi_version: 2.11
+kind: function
+return_type: EFI_STATUS
+parameters:
+  - name: This
+    type: EFI_FILE_PROTOCOL*
+  - name: NewHandle
+    type: EFI_FILE_PROTOCOL**
+  - name: FileName
+    type: CHAR16*
+  - name: OpenMode
+    type: UINT64
+  - name: Attributes
+    type: UINT64

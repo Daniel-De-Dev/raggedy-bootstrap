@@ -17,4 +17,4 @@ architecture: 64
 | Type | Name |
 | :--- | :--- |
 | [`EFI_SIMPLE_FILE_SYSTEM_PROTOCOL*`](EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.md) | `This` |
-| `EFI_FILE_PROTOCOL**` | `Root` |
+| [`EFI_FILE_PROTOCOL**`](EFI_FILE_PROTOCOL.md) | `Root` |

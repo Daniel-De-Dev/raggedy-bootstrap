@@ -184,7 +184,7 @@ B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000 (64KB)
 13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
 83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
-83 34 01 00 # ld s1, 0(sp)                # s1: *Buffer from stack
+83 34 01 00 # ld s1, 0(sp)                # s1: *Buffer
 
 
 # [2.1.2] Allocate Memory for out.efi
@@ -196,7 +196,7 @@ B7 05 01 00 # lui a1, 0x100               # a1: Size = 0x10000 (64KB)
 13 06 01 00 # addi a2, sp, 0              # a2: **Buffer = sp
 83 32 04 04 # ld t0, 64(s0)               # t0: *AllocatePool
 E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
-03 39 01 00 # ld s2, 0(sp)                # s2: *Buffer from stack
+03 39 01 00 # ld s2, 0(sp)                # s2: *Buffer
 
 
 # ------------------------------------------------------------------------------
@@ -215,25 +215,48 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call AllocatePool
 D2 11
 8E 39 00 A0 C9 69 72 3B
 
-17 05 00 00 # auipc a0, 0                 # a0: Current Program Counter (PC)
+17 05 00 00 # auipc a0, 0                 # a0: Current PC
 13 05 05 FF # addi a0, a0, -16            # a0: *Protocol = PC - 16
 93 05 00 00 # addi a1, x0, 0              # a1: *Registration = NULL
 13 06 01 00 # addi a2, sp, 0              # a2: **Interface = sp
 83 32 04 14 # ld t0, 320(s0)              # t0: *LocateProtocol
 E7 80 02 00 # jalr ra, 0(t0)              # Call LocateProtocol
-83 39 01 00 # ld s3, 0(sp)                # s3: *Interface from stack
+83 39 01 00 # ld s3, 0(sp)                # s3: *Interface
 
 
 # [2.2.2] Open Root Volume
 # Call: EFI_SIMPLE_FILE_SYSTEM_PROTOCOL->OpenVolume(*This, **Root)
-# Note: Return status ignored.
+# Note: Return status ignored. Reuses S3 register
 
 13 85 09 00 # addi a0, s3, 0              # a0: *This = s3
 93 05 01 00 # addi a1, sp, 0              # a1: **Root = sp
 83 B2 89 00 # ld t0, 8(s3)                # t0: *OpenVolume
 E7 80 02 00 # jalr ra, 0(t0)              # Call OpenVolume
-83 39 01 00 # ld s3, 0(sp)                # s3: *Root from stack
+83 39 01 00 # ld s3, 0(sp)                # s3: *Root
+
+
+# [2.2.3] Open `src.hx0`
+# Call: EFI_FILE_PROTOCOL->Open(*This, **NewHandle, *FileName, OpenMode, Attributes)
+# Note: String is inline UCS-2. Return status ignored
+
+6F 00 40 01 # jal x0, 20                  # Jump over the filename string
+
+# "src.hx0\0"
+73 00 72 00 63 00 2E 00
+68 00 78 00 30 00 00 00
+
+13 85 09 00 # addi a0, s3, 0              # a0: *This = s3 (Root Handle)
+93 05 01 00 # addi a1, sp, 0              # a1: **NewHandle = sp
+17 06 00 00 # auipc a2, 0                 # a2: Current PC
+13 06 86 FE # addi a2, a2, -24            # a2: *FileName = PC - 24
+93 06 10 00 # addi a3, x0, 1              # a3: OpenMode = 1 (EFI_FILE_MODE_READ)
+13 07 00 00 # addi a4, x0, 0              # a4: Attributes = 0
+83 B2 89 00 # ld t0, 8(s3)                # t0: *Open
+E7 80 02 00 # jalr ra, 0(t0)              # Call Open
+03 3A 01 00 # ld s4, 0(sp)                # s4: *src_file_handle
 
 # TODO: End of program clean up before return
+# - Close no longer needed handles (?)
 # - Free allocated memory
 # - Restore callee registers
+# - ret

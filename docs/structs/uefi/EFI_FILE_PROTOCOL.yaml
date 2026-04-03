@@ -1,0 +1,34 @@
+name: EFI_FILE_PROTOCOL
+reference_link: "https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html#efi-file-protocol"
+uefi_version: 2.11
+fields:
+  - name: Revision
+    type: UINT64
+  - name: Open
+    type: EFI_FILE_OPEN
+  - name: Close
+    type: EFI_FILE_CLOSE
+  - name: Delete
+    type: EFI_FILE_DELETE
+  - name: Read
+    type: EFI_FILE_READ
+  - name: Write
+    type: EFI_FILE_WRITE
+  - name: GetPosition
+    type: EFI_FILE_GET_POSITION
+  - name: SetPosition
+    type: EFI_FILE_SET_POSITION
+  - name: GetInfo
+    type: EFI_FILE_GET_INFO
+  - name: SetInfo
+    type: EFI_FILE_SET_INFO
+  - name: Flush
+    type: EFI_FILE_FLUSH
+  - name: OpenEx
+    type: EFI_FILE_OPEN_EX
+  - name: ReadEx
+    type: EFI_FILE_READ_EX
+  - name: WriteEx
+    type: EFI_FILE_WRITE_EX
+  - name: FlushEx
+    type: EFI_FILE_FLUSH_EX
