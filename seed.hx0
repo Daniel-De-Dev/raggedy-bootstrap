@@ -255,6 +255,21 @@ E7 80 02 00 # jalr ra, 0(t0)              # Call OpenVolume
 E7 80 02 00 # jalr ra, 0(t0)              # Call Open
 03 3A 01 00 # ld s4, 0(sp)                # s4: *src_file_handle
 
+
+# [2.2.4] Read File Content
+# Call: EFI_FILE_PROTOCOL->Read(*This, *BufferSize, *Buffer)
+# Note: Return status ignored
+
+13 05 0A 00 # addi a0, s4, 0              # a0: *This = s4 (src_file_handle)
+B7 05 01 00 # lui a1, 0x10                # a1: 0x10000 (64KB)
+23 30 B1 00 # sd a1, 0(sp)                # Write 64KB to top of stack
+93 05 01 00 # addi a1, sp, 0              # a1: *BufferSize = sp
+13 86 04 00 # addi a2, s1, 0              # a2: *Buffer = s1
+83 32 0A 02 # ld t0, 32(s4)               # t0: *Read
+E7 80 02 00 # jalr ra, 0(t0)              # Call Read
+
+# TODO: 2.2.5 close src.hx0 handle
+
 # TODO: End of program clean up before return
 # - Close no longer needed handles (?)
 # - Free allocated memory

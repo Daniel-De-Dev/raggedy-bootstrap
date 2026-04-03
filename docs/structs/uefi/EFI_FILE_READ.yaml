@@ -1,0 +1,12 @@
+name: EFI_FILE_READ
+reference_link: "https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html#efi-file-protocol-read"
+uefi_version: 2.11
+kind: function
+return_type: EFI_STATUS
+parameters:
+  - name: This
+    type: EFI_FILE_PROTOCOL*
+  - name: BufferSize
+    type: UINTN*
+  - name: Buffer
+    type: VOID*
